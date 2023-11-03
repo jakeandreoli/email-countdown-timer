@@ -28,6 +28,7 @@
 /**
  * Encode animated gifs
  */
+#[\AllowDynamicProperties]
 class AnimatedGif
 {
 
