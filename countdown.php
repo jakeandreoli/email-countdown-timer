@@ -5,6 +5,8 @@ include 'GIFEncoder.class.php';
 /**
  * Class CountdownTimer
  */
+
+#[\AllowDynamicProperties]
 class CountdownTimer
 {
 
@@ -140,6 +142,7 @@ class CountdownTimer
     $this->yOffset = $settings['yOffset'];
     $this->boxColor = $this->hex2rgb($settings['boxColor']);
     $this->fontColor = $this->hex2rgb($settings['fontColor']);
+    $this->font = $settings['font'];
 
     $this->labelOffsets = explode(',', $settings['labelOffsets']);
 
@@ -151,11 +154,26 @@ class CountdownTimer
     // create new images
     $this->box = imagecreatetruecolor($this->width, $this->height);
     $this->base = imagecreatetruecolor($this->width, $this->height);
+    
+    if ($this->font === null || !file_exists(__DIR__ . DIRECTORY_SEPARATOR . "fonts" . DIRECTORY_SEPARATOR . $this->font . ".ttf"))
+    {
+        $this->font = "BebasNeue";
+    }
 
-    $this->fontSettings['path'] = $this->fontPath . $settings['font'] . '.ttf';
+    $this->fontSettings['path'] =  __DIR__ . DIRECTORY_SEPARATOR . "fonts" . DIRECTORY_SEPARATOR . $this->font . ".ttf";
     $this->fontSettings['color'] = imagecolorallocate($this->box, $this->fontColor[0], $this->fontColor[1], $this->fontColor[2]);
     $this->fontSettings['size'] = $settings['fontSize'];
-    $this->fontSettings['characterWidth'] = imagefontwidth($this->fontSettings['path']);
+
+    // Example character to measure width
+    $exampleCharacter = 'A'; 
+
+    // Calculate the bounding box of the character
+    $bbox = imagettfbbox($this->fontSettings['size'], 0, $this->fontSettings['path'], $exampleCharacter);
+
+    // Width of the character
+    $characterWidth = $bbox[2] - $bbox[0];
+
+    $this->fontSettings['characterWidth'] = $characterWidth;
 
     // get the width of each character
     $string = "0:";
@@ -167,7 +185,7 @@ class CountdownTimer
     for ($i = 0; $i < $strlen; $i++) {
       $dimensions = imagettfbbox($size, $angle, $fontfile, $string[$i]);
       $this->fontSettings['characterWidths'][] = array(
-        $string[i] => $dimensions[2]
+        $string[$i] => $dimensions[2]
       );
     }
 
@@ -237,8 +255,9 @@ class CountdownTimer
     $labels = array('Days', 'Hrs', 'Mins', 'Secs');
 
     // apply the labels to the image $this->yOffset + ($this->characterHeight * 0.8)
-    foreach ($labels as $key => $label) {
-      imagettftext($image, 15, 0, $this->xOffset + ($this->characterWidth * $this->labelOffsets[$key]), 98, $font['color'], $font['path'], $label);
+    foreach ($labels as $key => $label)
+    {
+      imagettftext($image, 15, 0, (int)($this->xOffset + ($this->characterWidth * $this->labelOffsets[$key])), 98, $font['color'], $font['path'], $label);
     }
 
     // apply time to new image
@@ -275,7 +294,7 @@ new CountdownTimer(array(
   'width' => isset($_GET['width']) ? $_GET['width'] : 640,
   'height' => isset($_GET['height']) ? $_GET['height'] : 110,
   'boxColor' => isset($_GET['boxColor']) ? $_GET['boxColor'] : '#000',
-  'font' => isset($_GET['font']) ? $_GET['font'] : 'BebasNeue',
+  'font' => isset($_GET['font']) ? $_GET['font'] : null,
   'fontColor' => isset($_GET['fontColor']) ? $_GET['fontColor'] : '#fff',
   'fontSize' => isset($_GET['fontSize']) ? $_GET['fontSize'] : 60,
   'xOffset' => isset($_GET['xOffset']) ? $_GET['xOffset'] : 155,
